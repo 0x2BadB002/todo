@@ -1,4 +1,4 @@
-package http
+package v1
 
 import (
 	"context"
@@ -14,7 +14,7 @@ type Handler struct {
 	tasks *tasks.Tasks
 }
 
-func NewHandler(tasks *tasks.Tasks) *Handler {
+func New(tasks *tasks.Tasks) *Handler {
 	return &Handler{tasks: tasks}
 }
 
