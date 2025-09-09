@@ -41,6 +41,7 @@ func (h *Server) Serve() error {
 func create_mux(handler *v1.Handler) *http.ServeMux {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("/v1/tasks", handler.GetTasks)
 	mux.HandleFunc("/v1/tasks/new", handler.CreateTask)
 
 	return mux

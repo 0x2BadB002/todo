@@ -30,3 +30,12 @@ func (t *Tasks) CreateTask(ctx context.Context, req domain.AddTaskRequest) (int6
 
 	return id, nil
 }
+
+func (t *Tasks) GetTasks(ctx context.Context) ([]domain.Task, error) {
+	tasks, err := t.db.GetTasks(ctx)
+	if err != nil {
+		return tasks, errors.Join(err, ErrInvalidRequest)
+	}
+
+	return tasks, nil
+}

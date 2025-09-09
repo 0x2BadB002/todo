@@ -30,13 +30,29 @@ func (h *Handler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	id, err := h.tasks.CreateTask(context.Background(), req)
 	if err != nil {
 		log.Println(err)
-		return
 	}
 
-	resp := map[string]interface{}{"id": id}
+	resp := map[string]any{
+		"id": id,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Println("encode response:", err)
+	}
+}
+
+func (h *Handler) GetTasks(w http.ResponseWriter, r *http.Request) {
+	tasks, err := h.tasks.GetTasks(context.Background())
+	if err != nil {
+		log.Println(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(tasks); err != nil {
 		log.Println("encode response:", err)
 	}
 }

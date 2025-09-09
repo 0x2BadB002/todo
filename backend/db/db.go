@@ -17,10 +17,13 @@ var (
 	create_table_query string
 	//go:embed insert_task.sql
 	insert_query string
+	//go:embed get_tasks.sql
+	get_query string
 )
 
 var (
-	ErrDBInsert = errors.New("failed inserting task to db")
+	ErrInsertIntoDB = errors.New("failed inserting task to db")
+	ErrGetFromDB    = errors.New("failed retrieving tasks from db")
 )
 
 type DB struct {
@@ -60,16 +63,58 @@ func (db *DB) AddTask(ctx context.Context, req domain.AddTaskRequest) (int64, er
 		req.Name,
 		req.Description,
 		req.Priority,
-		req.Due_at,
+		req.Due,
 	)
 	if err != nil {
-		return -1, errors.Join(err, ErrDBInsert)
+		return -1, errors.Join(err, ErrInsertIntoDB)
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		return -1, errors.Join(err, ErrDBInsert)
+		return -1, errors.Join(err, ErrInsertIntoDB)
 	}
 
 	return id, nil
+}
+
+func (db *DB) GetTasks(ctx context.Context) ([]domain.Task, error) {
+	rows, err := db.db.QueryContext(ctx, get_query)
+	if err != nil {
+		return nil, errors.Join(err, ErrGetFromDB)
+	}
+
+	res := []domain.Task{}
+	for rows.Next() {
+		var task domain.Task
+
+		if rows.Err() != nil {
+			return res, errors.Join(err, ErrGetFromDB)
+		}
+
+		err = rows.Scan(
+			&task.ID,
+			&task.Name,
+			&task.Description,
+			&task.Priority,
+			&task.Due,
+			&task.UpdatedAt,
+			&task.CreatedAt,
+			&task.DeletedAt,
+		)
+		if err != nil {
+			return res, errors.Join(err, ErrGetFromDB)
+		}
+
+		res = append(res, task)
+	}
+	if rows.Err() != nil {
+		return res, errors.Join(err, ErrGetFromDB)
+	}
+
+	err = rows.Close()
+	if err != nil {
+		return res, errors.Join(err, ErrGetFromDB)
+	}
+
+	return res, nil
 }
