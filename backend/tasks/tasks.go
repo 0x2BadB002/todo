@@ -25,7 +25,7 @@ func New(db *db.DB) *Tasks {
 func (t *Tasks) CreateTask(ctx context.Context, req domain.AddTaskRequest) (int64, error) {
 	id, err := t.db.AddTask(ctx, req)
 	if err != nil {
-		return -1, errors.Join(err, ErrInvalidRequest)
+		return -1, errors.Join(ErrInvalidRequest, err)
 	}
 
 	return id, nil
@@ -34,7 +34,7 @@ func (t *Tasks) CreateTask(ctx context.Context, req domain.AddTaskRequest) (int6
 func (t *Tasks) GetTasks(ctx context.Context) ([]domain.Task, error) {
 	tasks, err := t.db.GetTasks(ctx)
 	if err != nil {
-		return tasks, errors.Join(err, ErrInvalidRequest)
+		return tasks, errors.Join(ErrInvalidRequest, err)
 	}
 
 	return tasks, nil

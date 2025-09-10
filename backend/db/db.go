@@ -66,29 +66,40 @@ func (db *DB) AddTask(ctx context.Context, req domain.AddTaskRequest) (int64, er
 		req.Due,
 	)
 	if err != nil {
-		return -1, errors.Join(err, ErrInsertIntoDB)
+		return -1, errors.Join(ErrInsertIntoDB, err)
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		return -1, errors.Join(err, ErrInsertIntoDB)
+		return -1, errors.Join(ErrInsertIntoDB, err)
 	}
 
 	return id, nil
 }
 
-func (db *DB) GetTasks(ctx context.Context) ([]domain.Task, error) {
+func (db *DB) GetTasks(ctx context.Context) (res []domain.Task, err error) {
 	rows, err := db.db.QueryContext(ctx, get_query)
 	if err != nil {
-		return nil, errors.Join(err, ErrGetFromDB)
+		return nil, errors.Join(ErrGetFromDB, err)
 	}
+	defer func() {
+		tmpErr := rows.Close()
+		if tmpErr != nil && err != nil {
+			err = errors.Join(err, tmpErr)
+			return
+		}
+		if tmpErr != nil {
+			err = errors.Join(ErrGetFromDB, tmpErr)
+			return
+		}
+	}()
 
-	res := []domain.Task{}
+	res = []domain.Task{}
 	for rows.Next() {
 		var task domain.Task
 
 		if rows.Err() != nil {
-			return res, errors.Join(err, ErrGetFromDB)
+			return res, errors.Join(ErrGetFromDB, err)
 		}
 
 		err = rows.Scan(
@@ -102,18 +113,13 @@ func (db *DB) GetTasks(ctx context.Context) ([]domain.Task, error) {
 			&task.DeletedAt,
 		)
 		if err != nil {
-			return res, errors.Join(err, ErrGetFromDB)
+			return res, errors.Join(ErrGetFromDB, err)
 		}
 
 		res = append(res, task)
 	}
 	if rows.Err() != nil {
-		return res, errors.Join(err, ErrGetFromDB)
-	}
-
-	err = rows.Close()
-	if err != nil {
-		return res, errors.Join(err, ErrGetFromDB)
+		return res, errors.Join(ErrGetFromDB, err)
 	}
 
 	return res, nil
